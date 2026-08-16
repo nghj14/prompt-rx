@@ -1,0 +1,643 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clinician Prompt Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F3F6F5;
+    --line:#DCE3E0;
+    --card:#FFFFFF;
+    --ink:#16233D;
+    --ink-soft:#4B5A72;
+    --ink-faint:#6B7890;
+    --teal:#0F7566;
+    --teal-deep:#0B5B50;
+    --teal-tint:#E4F1EE;
+    --alert:#B3253A;
+    --radius:14px;
+    --radius-sm:10px;
+    --shadow:0 1px 2px rgba(22,35,61,0.06), 0 6px 16px rgba(22,35,61,0.07);
+    --font-sans:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    --font-mono:'IBM Plex Mono','SF Mono',Consolas,'Liberation Mono',monospace;
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font-sans);-webkit-font-smoothing:antialiased;}
+  button{font-family:inherit;-webkit-tap-highlight-color:transparent;}
+
+  .appbar{background:var(--ink);color:var(--paper);}
+  .appbar-inner{max-width:680px;margin:0 auto;padding:18px 20px 14px;display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 12px;}
+  .wordmark{font-family:var(--font-mono);font-size:16.5px;font-weight:600;letter-spacing:0.3px;}
+  .wordmark-accent{color:#7FD9C9;}
+
+  .perf{height:11px;background-color:var(--ink);background-image:radial-gradient(circle at center, var(--paper) 2.6px, transparent 2.8px);background-size:15px 11px;background-position:7px 0;}
+
+  .container{max-width:680px;margin:0 auto;padding:22px 20px 40px;min-height:calc(100vh - 170px);}
+  .footer{max-width:680px;margin:0 auto;padding:0 20px 28px;font-size:12px;color:var(--ink-faint);line-height:1.5;}
+
+  /* Home */
+  .home-lede{font-size:15px;color:var(--ink-soft);line-height:1.55;margin:0 0 20px;}
+  .task-grid{display:flex;flex-direction:column;gap:12px;margin-bottom:8px;}
+  .task-card{display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:var(--card);border:1.5px solid var(--line);border-radius:var(--radius);padding:16px;cursor:pointer;box-shadow:var(--shadow);transition:border-color .12s ease,transform .1s ease;}
+  .task-card:hover{border-color:var(--teal);}
+  .task-card:active{transform:scale(0.99);}
+  .task-icon{flex:0 0 auto;width:44px;height:44px;border-radius:12px;background:var(--teal-tint);color:var(--teal-deep);display:flex;align-items:center;justify-content:center;}
+  .task-icon svg{width:24px;height:24px;}
+  .task-text{flex:1 1 auto;display:flex;flex-direction:column;gap:2px;min-width:0;}
+  .task-title{font-size:16px;font-weight:600;color:var(--ink);}
+  .task-sub{font-size:13px;color:var(--ink-soft);line-height:1.4;}
+  .task-chevron{flex:0 0 auto;font-size:20px;color:var(--ink-faint);}
+
+  .fav-section{margin-top:28px;padding-top:20px;border-top:1.5px dashed var(--line);}
+  .fav-heading{font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--ink-faint);margin:0 0 4px;}
+  .fav-note{font-size:12px;color:var(--ink-faint);margin:0 0 14px;}
+  .fav-row{display:flex;align-items:center;gap:10px;background:var(--card);border:1.5px solid var(--line);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:8px;cursor:pointer;}
+  .fav-id{font-family:var(--font-mono);font-size:12px;font-weight:600;color:var(--teal-deep);background:var(--teal-tint);padding:2px 6px;border-radius:5px;flex:0 0 auto;}
+  .fav-label{flex:1 1 auto;font-size:13.5px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .fav-del{flex:0 0 auto;background:none;border:none;color:var(--ink-faint);font-size:17px;cursor:pointer;padding:4px 6px;line-height:1;}
+  .fav-del:hover{color:var(--alert);}
+
+  /* Wizard */
+  .wizard-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .back-btn,.close-btn{background:none;border:none;font-size:14px;color:var(--ink-soft);cursor:pointer;padding:6px 4px;}
+  .back-btn:hover,.close-btn:hover{color:var(--ink);}
+  .close-btn{font-size:18px;}
+  .eyebrow{font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--teal-deep);margin:0 0 10px;}
+  .progress{margin-bottom:20px;}
+  .progress-label{font-family:var(--font-mono);font-size:11px;letter-spacing:1px;color:var(--ink-faint);}
+  .progress-track{margin-top:6px;height:6px;border-radius:3px;background:var(--line);overflow:hidden;}
+  .progress-fill{height:100%;background:var(--teal);border-radius:3px;transition:width .25s ease;}
+  .step-title{font-size:20px;font-weight:600;margin:0 0 6px;color:var(--ink);line-height:1.3;}
+  .step-sub{font-size:13.5px;color:var(--ink-soft);margin:0 0 16px;}
+  .step-body{display:flex;flex-direction:column;gap:10px;margin-bottom:18px;}
+  .step-body-row{flex-direction:row;}
+  .mini-label{display:block;font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--ink-faint);margin-bottom:6px;}
+  .mini-stack{display:flex;flex-direction:column;gap:8px;}
+
+  .opt-btn{position:relative;display:block;width:100%;text-align:left;background:var(--card);border:1.5px solid var(--line);border-radius:var(--radius-sm);padding:14px 16px 14px 44px;font-size:15.5px;color:var(--ink);cursor:pointer;transition:border-color .12s ease,background .12s ease;}
+  .opt-btn::before{content:'';position:absolute;left:16px;top:50%;transform:translateY(-50%);width:18px;height:18px;border-radius:50%;border:1.5px solid var(--ink-faint);background:var(--card);}
+  .opt-btn.is-selected{border-color:var(--teal);background:var(--teal-tint);}
+  .opt-btn.is-selected::before{border-color:var(--teal);background:var(--teal);box-shadow:inset 0 0 0 3px var(--teal-tint);}
+  .opt-btn:hover{border-color:var(--teal);}
+
+  .step-body-row .opt-btn{flex:1 1 0;text-align:center;padding:14px 8px;}
+  .step-body-row .opt-btn::before{display:none;}
+
+  .chk{display:flex;align-items:flex-start;gap:12px;width:100%;background:var(--card);border:1.5px solid var(--line);border-radius:var(--radius-sm);padding:13px 16px;font-size:15px;color:var(--ink);cursor:pointer;}
+  .chk input{width:19px;height:19px;margin-top:1px;accent-color:var(--teal);flex:0 0 auto;}
+  .chk:has(input:checked){border-color:var(--teal);background:var(--teal-tint);}
+
+  .dd-wrap{position:relative;}
+  .dd{width:100%;appearance:none;-webkit-appearance:none;background:var(--card);border:1.5px solid var(--line);border-radius:var(--radius-sm);padding:14px 40px 14px 16px;font-size:15.5px;color:var(--ink);font-family:inherit;cursor:pointer;}
+  .dd-wrap::after{content:'›';position:absolute;right:16px;top:50%;transform:translateY(-50%) rotate(90deg);color:var(--ink-faint);font-size:16px;pointer-events:none;}
+
+  .text-input{width:100%;background:var(--card);border:1.5px solid var(--line);border-radius:var(--radius-sm);padding:14px 16px;font-size:15.5px;color:var(--ink);font-family:inherit;}
+  .text-input:focus{outline:none;border-color:var(--teal);}
+  .textarea-input{min-height:110px;line-height:1.55;resize:vertical;}
+
+  .btn-primary{display:block;width:100%;background:var(--teal);color:#fff;border:none;border-radius:var(--radius-sm);padding:15px 20px;font-size:15.5px;font-weight:600;cursor:pointer;transition:background .12s ease;}
+  .btn-primary:hover{background:var(--teal-deep);}
+  .btn-primary:disabled{background:var(--line);color:var(--ink-faint);cursor:not-allowed;}
+
+  .btn-secondary{display:block;width:100%;background:transparent;color:var(--teal-deep);border:1.5px solid var(--teal);border-radius:var(--radius-sm);padding:13.5px 20px;font-size:15px;font-weight:600;cursor:pointer;margin-top:10px;}
+  .btn-secondary:disabled{border-color:var(--line);color:var(--ink-faint);cursor:not-allowed;}
+
+  .btn-danger{display:block;width:100%;background:transparent;border:1.5px solid var(--alert);color:var(--alert);border-radius:var(--radius-sm);padding:13.5px 20px;font-size:15px;font-weight:600;cursor:pointer;margin-top:10px;}
+
+  .link-btn{background:none;border:none;color:var(--ink-soft);font-size:13.5px;text-decoration:underline;cursor:pointer;padding:4px 0;}
+
+  .order-card{background:var(--card);border:1.5px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);}
+  .order-top{display:flex;align-items:center;justify-content:space-between;padding-bottom:14px;border-bottom:1.5px dashed var(--line);margin-bottom:16px;}
+  .order-ref{font-family:var(--font-mono);font-size:12px;font-weight:600;color:var(--teal-deep);background:var(--teal-tint);padding:3px 8px;border-radius:5px;}
+  .order-flow{font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--ink-faint);}
+  .order-text{width:100%;box-sizing:border-box;border:none;background:none;resize:none;font-family:var(--font-sans);font-size:14.5px;line-height:1.65;color:var(--ink);padding:0;overflow:hidden;}
+  .order-text:focus{outline:none;}
+
+  .output-actions{display:flex;flex-direction:column;gap:0;margin-top:16px;}
+  .copy-tip{font-size:12px;color:var(--ink-faint);text-align:center;margin:10px 0 0;}
+  .output-links{display:flex;justify-content:space-between;margin-top:18px;}
+
+  button:focus-visible,.dd:focus-visible,.text-input:focus-visible,.chk input:focus-visible,.opt-btn:focus-visible{outline:2.5px solid var(--teal);outline-offset:2px;}
+
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important;animation:none !important;}
+  }
+</style>
+</head>
+<body>
+  <div class="appbar"><div class="appbar-inner">
+    <span class="wordmark">Clinician Prompt <span class="wordmark-accent">Builder</span></span>
+  </div></div>
+  <div class="perf"></div>
+  <noscript>
+    <div style="max-width:640px;margin:20px auto;padding:20px;border:1.5px solid #DCE3E0;border-radius:14px;background:#FBF1DF;color:#16233D;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.5;">
+      <strong>This tool needs JavaScript to run, and it isn't running right now.</strong>
+      <p style="margin:10px 0 0;">This usually happens when an HTML file is previewed straight from an email attachment — common on iPhone (Quick Look doesn't run JavaScript). To use it: save this file, then open it from a browser app like Chrome, Edge, or Firefox instead of tapping it directly in Mail.</p>
+    </div>
+  </noscript>
+  <main id="app" class="container"></main>
+  <footer class="footer">This tool only builds prompts. Review any AI output against your clinical judgment and your institution's protocols before acting on it.</footer>
+
+<script>
+/* ---------- Icons ---------- */
+var ICONS = {
+  cds: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><rect x="9" y="2.5" width="6" height="3" rx="1"/><polyline points="8.5 13 10.5 15 15.5 10"/></svg>',
+  inbox: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><polyline points="3.5 6 12 13 20.5 6"/></svg>',
+  articles: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 3 21 8 12 13 3 8 12 3"/><polyline points="3 12 12 17 21 12"/><polyline points="3 16 12 21 21 16"/></svg>'
+};
+
+/* ---------- Helpers ---------- */
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, function(m){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];
+  });
+}
+function escJs(str){ return String(str).replace(/'/g, "\\'"); }
+
+/* ---------- Option data ---------- */
+var CONDITIONS = [
+  {group:'Cardiology', items:['Atrial fibrillation','Heart failure (HFrEF)','Heart failure (HFpEF)','Hypertension','Acute coronary syndrome','Hyperlipidemia','Cardiogenic shock','Hypertrophic cardiomyopathy']},
+  {group:'Endocrine', items:['Type 2 diabetes','Type 1 diabetes','Hypothyroidism','Hyperthyroidism','Osteoporosis','Adrenal insufficiency']},
+  {group:'Pulmonary', items:['COPD exacerbation','Asthma','Pulmonary embolism','Community-acquired pneumonia','Hospital-acquired pneumonia']},
+  {group:'Renal & Electrolytes', items:['Acute kidney injury','Chronic kidney disease','Hyperkalemia','Hyponatremia','Nephrolithiasis']},
+  {group:'Infectious Disease', items:['Sepsis','Urinary tract infection','Cellulitis / skin infection','C. difficile infection','Infective endocarditis']},
+  {group:'Gastroenterology', items:['GERD','Inflammatory bowel disease','Acute pancreatitis','Cirrhosis / hepatic encephalopathy','Upper GI bleed']},
+  {group:'Neurology', items:['Acute stroke / TIA','Seizure / status epilepticus','Delirium','Migraine']},
+  {group:'Hematology & Oncology', items:['Anemia workup','VTE / anticoagulation','Neutropenic fever']},
+  {group:'Psychiatry', items:['Depression','Anxiety','Alcohol withdrawal','Opioid use disorder']},
+  {group:'Preventive Care', items:['Cancer screening','Adult immunizations','Cardiovascular risk assessment']}
+];
+var QUESTION_TYPES = ['Diagnostic criteria','First-line treatment','Second-line or refractory treatment','Dosing & adjustment','Monitoring & follow-up','Referral or admission threshold','Screening recommendation'];
+var MODIFIERS = ['Pregnancy or lactation','Renal impairment','Hepatic impairment','Age 65+','Pediatric patient','Major drug-interaction risk'];
+var AGE_OPTIONS = ['Not specified'];
+for (var _a = 0; _a <= 104; _a++) AGE_OPTIONS.push(String(_a));
+AGE_OPTIONS.push('105+');
+var SEX_OPTIONS = ['Not specified','Female','Male'];
+var GUIDELINES = ['Most current major guideline (recommended)','ACC/AHA','ADA','GOLD','KDIGO','IDSA','USPSTF','No preference'];
+var OUTPUT_STYLES = ['Concise bullet points','Include rationale or mechanism','Include a dosing table','Include guideline citations'];
+
+var MESSAGE_TYPES = ['Refill request','Lab result question','Symptom or triage concern','Scheduling request','Referral question','Medication side-effect concern','General question'];
+var TONES = ['Warm & reassuring','Direct & efficient','Educational & detailed'];
+var READING_LEVELS = ['Simple (5th-grade level)','Standard (8th-grade level)','Adult general'];
+var LENGTHS = ['Short','Standard','Detailed with next steps'];
+var MUST_INCLUDE = ['Clear next steps','Urgent warning signs','Offer a follow-up appointment','A clarifying question back to the patient','Brief empathy statement'];
+
+var ARTICLE_COUNTS = ['2','3','4','5+'];
+var FOCUS_AREAS = ['Key findings','Methods','Clinical implications / practice changes','Limitations','Cross-article comparison','Bottom-line takeaway'];
+var FORMATS = ['Bulleted summary','Comparison table','Narrative paragraph','PICO structure'];
+var AUDIENCES = ['Quick personal reference','Patient education handout','Colleague presentation / journal club'];
+
+/* ---------- Prompt builders ---------- */
+function buildCdsPrompt(sel){
+  var modifiers = (sel.modifiers && sel.modifiers.length) ? sel.modifiers.join(', ') : null;
+  var guideline = null;
+  if (sel.guideline === GUIDELINES[0]) guideline = 'the most current major society guideline';
+  else if (sel.guideline && sel.guideline !== 'No preference') guideline = sel.guideline;
+  var styles = (sel.style && sel.style.length) ? sel.style : null;
+
+  var patientBits = [];
+  if (sel.age && sel.age !== 'Not specified') patientBits.push(sel.age + '-year-old');
+  if (sel.sex && sel.sex !== 'Not specified') patientBits.push(sel.sex.toLowerCase());
+  var patientLine = patientBits.length ? patientBits.join(' ') : null;
+
+  var lines = [];
+  lines.push('Act as a clinical decision support assistant for a busy physician. Give a concise, guideline-based answer \u2014 no hedging or generic disclaimers.');
+  lines.push('');
+  lines.push('Condition: ' + sel.condition);
+  if (patientLine) lines.push('Patient: ' + patientLine);
+  lines.push('Question: ' + sel.question + ' for ' + sel.condition);
+  if (modifiers) lines.push('Patient factors to account for: ' + modifiers);
+  if (guideline) lines.push('Base the answer on: ' + guideline);
+  lines.push('');
+  if (styles) lines.push('Format the response using: ' + styles.join('; ') + '.');
+  else lines.push('Format the response clearly and concisely for quick reading between patients.');
+  lines.push('Flag any point where guidelines vary by patient population or where evidence is mixed.');
+  if (sel.extra && sel.extra.trim()) lines.push('Additional instructions: ' + sel.extra.trim());
+  lines.push('');
+  lines.push('This is for quick clinical reference only \u2014 I will apply my own judgment and my institution\u2019s protocols before acting on it.');
+  return lines.join('\n');
+}
+
+function buildInboxPrompt(sel){
+  var must = (sel.mustInclude && sel.mustInclude.length) ? sel.mustInclude.join(', ') : null;
+  var detail = (sel.detail && sel.detail.trim()) ? sel.detail.trim() : null;
+  var patientMsg = (sel.patientMessage && sel.patientMessage.trim()) ? sel.patientMessage.trim() : null;
+  var lines = [];
+  lines.push('Act as a primary care physician drafting a reply to a patient\u2019s inbox message. Write the reply itself, ready to send \u2014 not advice about how to write it.');
+  lines.push('');
+  if (patientMsg){
+    lines.push('Patient\u2019s message:');
+    lines.push(patientMsg);
+    lines.push('');
+  }
+  lines.push('Message type: ' + sel.messageType);
+  lines.push('Tone: ' + sel.tone);
+  lines.push('Reading level: ' + sel.readingLevel);
+  lines.push('Length: ' + sel.length);
+  if (must) lines.push('Make sure to include: ' + must);
+  if (detail) lines.push('Key detail to reference: ' + detail);
+  if (sel.extra && sel.extra.trim()) lines.push('Additional instructions: ' + sel.extra.trim());
+  lines.push('');
+  lines.push('Write only the message body \u2014 no subject line, no sign-off placeholder, no meta-commentary. I will review it before sending.');
+  return lines.join('\n');
+}
+
+function buildArticlesPrompt(sel){
+  var focus = (sel.focus && sel.focus.length) ? sel.focus.join(', ') : 'the most clinically relevant points';
+  var lines = [];
+  lines.push('Act as a research assistant summarizing medical literature for a busy clinician.');
+  lines.push('');
+  lines.push('I\u2019ll provide ' + sel.count + ' articles. Summarize them together, focusing on: ' + focus + '.');
+  lines.push('Format: ' + sel.format);
+  lines.push('Audience: ' + sel.audience);
+  if (sel.extra && sel.extra.trim()) lines.push('Additional instructions: ' + sel.extra.trim());
+  lines.push('');
+  lines.push('If the articles disagree with each other, flag the disagreement explicitly rather than smoothing it over.');
+  lines.push('Wait for me to paste the article text or abstracts below before summarizing.');
+  return lines.join('\n');
+}
+
+/* ---------- Flow config ---------- */
+var FLOWS = {
+  cds: {
+    label:'Clinical Decision Support', eyebrow:'CLINICAL DECISION SUPPORT', prefix:'CDS',
+    steps:[
+      {id:'condition', title:'What condition is this about?', type:'dropdown-grouped', groups:CONDITIONS, placeholder:'Select a condition\u2026'},
+      {id:'question', title:'What do you need to know?', type:'select-single', options:QUESTION_TYPES},
+      {id:'patient', title:'Tell us about the patient', sub:'Optional \u2014 helps tailor the answer to the right population. Skip anything not relevant.', type:'patient-info', modifierOptions:MODIFIERS},
+      {id:'guideline', title:'Which guideline should it lean on?', type:'dropdown', options:GUIDELINES, defaultValue:GUIDELINES[0]},
+      {id:'style', title:'How should the answer be formatted?', sub:'Select all that apply, or continue with the default.', type:'checkbox-multi', options:OUTPUT_STYLES},
+      {id:'extra', title:'Anything else the prompt should include?', sub:'Optional \u2014 add any extra instructions or context. Skip if not needed.', type:'text-optional', placeholder:'e.g., patient is on dialysis, prefers non-pharmacologic options first'}
+    ],
+    build: buildCdsPrompt
+  },
+  inbox: {
+    label:'Patient Inbox Reply', eyebrow:'PATIENT INBOX REPLY', prefix:'MSG',
+    steps:[
+      {id:'messageType', title:'What kind of message are you replying to?', type:'select-single', options:MESSAGE_TYPES},
+      {id:'patientMessage', title:'Want to paste the patient\u2019s message?', sub:'Optional \u2014 paste their exact question for a more accurate reply. Skip if not needed.', type:'textarea-optional', placeholder:'e.g., paste the patient\u2019s exact question or message here'},
+      {id:'tone', title:'What tone fits this reply?', type:'select-single', options:TONES},
+      {id:'readingLevel', title:'What reading level should it use?', type:'dropdown', options:READING_LEVELS, defaultValue:READING_LEVELS[1]},
+      {id:'length', title:'How long should the reply be?', type:'select-single', options:LENGTHS},
+      {id:'mustInclude', title:'What should the reply include?', sub:'Select all that apply, or continue with none.', type:'checkbox-multi', options:MUST_INCLUDE},
+      {id:'detail', title:'Any key detail to reference?', sub:'Optional \u2014 a lab value, medication name, or similar. Skip if not needed.', type:'text-optional', placeholder:'e.g., potassium 5.2, lisinopril'},
+      {id:'extra', title:'Anything else the prompt should include?', sub:'Optional \u2014 add any extra instructions or context. Skip if not needed.', type:'text-optional', placeholder:'e.g., patient prefers phone calls, keep it under 100 words'}
+    ],
+    build: buildInboxPrompt
+  },
+  articles: {
+    label:'Article Summary', eyebrow:'ARTICLE SUMMARY', prefix:'SUM',
+    steps:[
+      {id:'count', title:'How many articles are you summarizing?', type:'select-single', options:ARTICLE_COUNTS, layout:'row'},
+      {id:'focus', title:'What should the summary focus on?', sub:'Select all that apply, or continue with none.', type:'checkbox-multi', options:FOCUS_AREAS},
+      {id:'format', title:'How should the summary be formatted?', type:'select-single', options:FORMATS},
+      {id:'audience', title:'Who is this summary for?', type:'dropdown', options:AUDIENCES, defaultValue:AUDIENCES[0]},
+      {id:'extra', title:'Anything else the prompt should include?', sub:'Optional \u2014 add any extra instructions or context. Skip if not needed.', type:'text-optional', placeholder:'e.g., highlight conflicting results, note study sample sizes'}
+    ],
+    build: buildArticlesPrompt
+  }
+};
+
+function summaryFor(flowKey, sel){
+  if (flowKey==='cds') return sel.condition + ' \u2014 ' + sel.question;
+  if (flowKey==='inbox') return sel.messageType + ' reply \u2014 ' + sel.tone;
+  if (flowKey==='articles') return sel.count + ' articles \u2014 ' + sel.format;
+  return '';
+}
+
+/* ---------- State ---------- */
+var state = {
+  screen:'home', flowKey:null, stepIndex:0, sel:{},
+  favorites:[], favCounter:1, viewingFavIdx:null,
+  lastPrompt:'', lastFlowKey:null, lastSel:{}, savedThisPrompt:false
+};
+
+function currentStep(){ return FLOWS[state.flowKey].steps[state.stepIndex]; }
+
+function enterStep(){
+  var step = currentStep(), id = step.id;
+  if (step.type==='dropdown' && state.sel[id]===undefined) state.sel[id]=step.defaultValue;
+  if (step.type==='checkbox-multi' && state.sel[id]===undefined) state.sel[id]=[];
+  if (step.type==='text-optional' && state.sel[id]===undefined) state.sel[id]='';
+  if (step.type==='textarea-optional' && state.sel[id]===undefined) state.sel[id]='';
+  if (step.type==='patient-info'){
+    if (state.sel.age===undefined) state.sel.age='Not specified';
+    if (state.sel.sex===undefined) state.sel.sex='Not specified';
+    if (state.sel.modifiers===undefined) state.sel.modifiers=[];
+  }
+}
+
+/* ---------- Navigation ---------- */
+function startFlow(key){
+  state.screen='wizard'; state.flowKey=key; state.stepIndex=0; state.sel={};
+  enterStep(); render();
+}
+function goHome(){
+  state.screen='home'; state.flowKey=null; state.stepIndex=0; state.sel={};
+  render();
+}
+function goBack(){
+  if (state.stepIndex>0){ state.stepIndex--; enterStep(); render(); }
+  else { goHome(); }
+}
+function goForward(){
+  var flow = FLOWS[state.flowKey];
+  if (state.stepIndex < flow.steps.length-1){ state.stepIndex++; enterStep(); render(); }
+  else { finishFlow(); }
+}
+function selectSingle(value){
+  var step = currentStep();
+  state.sel[step.id]=value;
+  render();
+  setTimeout(goForward, 180);
+}
+function onDropdownChange(id, value){
+  state.sel[id]=value;
+  render();
+}
+function toggleMulti(id, value, checked){
+  var arr = state.sel[id]; if (!arr){ arr=[]; state.sel[id]=arr; }
+  var i = arr.indexOf(value);
+  if (checked && i===-1) arr.push(value);
+  if (!checked && i>-1) arr.splice(i,1);
+}
+function onTextInput(id, value){ state.sel[id]=value; }
+function continueStep(){ goForward(); }
+
+function finishFlow(){
+  var flow = FLOWS[state.flowKey];
+  state.lastPrompt = flow.build(state.sel);
+  state.lastFlowKey = state.flowKey;
+  state.lastSel = Object.assign({}, state.sel);
+  state.savedThisPrompt = false;
+  state.screen='output';
+  render();
+}
+function editAnswers(){
+  state.flowKey = state.lastFlowKey;
+  state.sel = Object.assign({}, state.lastSel);
+  state.stepIndex = FLOWS[state.flowKey].steps.length-1;
+  state.screen='wizard';
+  render();
+}
+
+/* ---------- Copy / favorites ---------- */
+function copyPrompt(){
+  var ta = document.getElementById('promptOutput');
+  if (!ta) return;
+  var text = ta.value;
+  ta.focus(); ta.select();
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(flashCopied).catch(fallbackCopy);
+  } else {
+    fallbackCopy();
+  }
+}
+function fallbackCopy(){
+  try { document.execCommand('copy'); flashCopied(); } catch(e){ /* text stays selected for manual copy */ }
+}
+function flashCopied(){
+  var btn = document.getElementById('copyBtn');
+  if (!btn) return;
+  var original = btn.textContent;
+  btn.textContent = 'Copied \u2713';
+  setTimeout(function(){ btn.textContent = original; }, 1600);
+}
+function saveFavorite(){
+  var flow = FLOWS[state.lastFlowKey];
+  var id = flow.prefix + '-' + String(state.favCounter).padStart(3,'0');
+  state.favCounter++;
+  state.favorites.unshift({ id:id, flowKey:state.lastFlowKey, summary:summaryFor(state.lastFlowKey, state.lastSel), prompt:state.lastPrompt });
+  state.savedThisPrompt = true;
+  render();
+}
+function viewFavorite(idx){ state.viewingFavIdx=idx; state.screen='favorite-view'; render(); }
+function deleteFavoriteFromHome(idx){ state.favorites.splice(idx,1); render(); }
+function deleteFavoriteAndGoHome(idx){ state.favorites.splice(idx,1); goHome(); }
+
+/* ---------- Renderers ---------- */
+function renderHomeHTML(){
+  var cards = [
+    {key:'cds', title:'Clinical Decision Support', sub:'Guideline-based answers on diagnosis, treatment & monitoring', icon:ICONS.cds},
+    {key:'inbox', title:'Patient Inbox Reply', sub:'Draft a reply to a patient message, in your voice', icon:ICONS.inbox},
+    {key:'articles', title:'Summarize Articles', sub:'Synthesize findings across multiple papers', icon:ICONS.articles}
+  ];
+  var html = '<p class="home-lede">Pick what you need. A few taps builds a ready-to-paste prompt for your LLM \u2014 no typing required.</p>';
+  html += '<div class="task-grid">';
+  cards.forEach(function(c){
+    html += '<button class="task-card" onclick="startFlow(\''+c.key+'\')">'
+      + '<span class="task-icon">'+c.icon+'</span>'
+      + '<span class="task-text"><span class="task-title">'+c.title+'</span><span class="task-sub">'+c.sub+'</span></span>'
+      + '<span class="task-chevron">\u203a</span>'
+      + '</button>';
+  });
+  html += '</div>';
+  if (state.favorites.length){
+    html += '<div class="fav-section"><p class="fav-heading">Saved this session</p><p class="fav-note">Favorites clear when you close this tab \u2014 copy anything you want to keep.</p>';
+    state.favorites.forEach(function(f, idx){
+      html += '<div class="fav-row" onclick="viewFavorite('+idx+')">'
+        + '<span class="fav-id">'+f.id+'</span>'
+        + '<span class="fav-label">'+escapeHtml(f.summary)+'</span>'
+        + '<button class="fav-del" onclick="event.stopPropagation(); deleteFavoriteFromHome('+idx+')" aria-label="Remove">\u00d7</button>'
+        + '</div>';
+    });
+    html += '</div>';
+  }
+  return html;
+}
+
+function renderSingleOptions(step){
+  var val = state.sel[step.id];
+  var html = '';
+  step.options.forEach(function(opt){
+    var cls = (val===opt) ? 'opt-btn is-selected' : 'opt-btn';
+    html += '<button class="'+cls+'" onclick="selectSingle(\''+escJs(opt)+'\')">'+escapeHtml(opt)+'</button>';
+  });
+  return html;
+}
+function renderGroupedDropdown(step){
+  var val = state.sel[step.id];
+  var html = '<div class="dd-wrap"><select class="dd" onchange="onDropdownChange(\''+step.id+'\', this.value)">';
+  html += '<option value="" '+(!val?'selected':'')+' disabled>'+escapeHtml(step.placeholder)+'</option>';
+  step.groups.forEach(function(g){
+    html += '<optgroup label="'+escapeHtml(g.group)+'">';
+    g.items.forEach(function(item){
+      html += '<option value="'+escapeHtml(item)+'" '+(val===item?'selected':'')+'>'+escapeHtml(item)+'</option>';
+    });
+    html += '</optgroup>';
+  });
+  html += '</select></div>';
+  return html;
+}
+function renderPlainDropdown(step){
+  var val = state.sel[step.id];
+  var html = '<div class="dd-wrap"><select class="dd" onchange="onDropdownChange(\''+step.id+'\', this.value)">';
+  step.options.forEach(function(opt){
+    html += '<option value="'+escapeHtml(opt)+'" '+(val===opt?'selected':'')+'>'+escapeHtml(opt)+'</option>';
+  });
+  html += '</select></div>';
+  return html;
+}
+function renderCheckboxes(step){
+  var arr = state.sel[step.id] || [];
+  var html = '';
+  step.options.forEach(function(opt, i){
+    var checked = arr.indexOf(opt)>-1 ? 'checked' : '';
+    var inputId = 'chk_'+step.id+'_'+i;
+    html += '<label class="chk" for="'+inputId+'">'
+      + '<input type="checkbox" id="'+inputId+'" '+checked+' onchange="toggleMulti(\''+step.id+'\', \''+escJs(opt)+'\', this.checked)">'
+      + '<span>'+escapeHtml(opt)+'</span>'
+      + '</label>';
+  });
+  return html;
+}
+function renderPatientInfo(step){
+  var age = state.sel.age===undefined ? 'Not specified' : state.sel.age;
+  var sex = state.sel.sex===undefined ? 'Not specified' : state.sel.sex;
+  var arr = state.sel.modifiers || [];
+
+  var html = '<div class="mini-group"><span class="mini-label">Age</span><div class="dd-wrap"><select class="dd" onchange="onDropdownChange(\'age\', this.value)">';
+  AGE_OPTIONS.forEach(function(opt){
+    html += '<option value="'+escapeHtml(opt)+'" '+(age===opt?'selected':'')+'>'+escapeHtml(opt)+'</option>';
+  });
+  html += '</select></div></div>';
+
+  html += '<div class="mini-group"><span class="mini-label">Sex</span><div class="dd-wrap"><select class="dd" onchange="onDropdownChange(\'sex\', this.value)">';
+  SEX_OPTIONS.forEach(function(opt){
+    html += '<option value="'+escapeHtml(opt)+'" '+(sex===opt?'selected':'')+'>'+escapeHtml(opt)+'</option>';
+  });
+  html += '</select></div></div>';
+
+  html += '<div class="mini-group"><span class="mini-label">Patient factors</span><div class="mini-stack">';
+  step.modifierOptions.forEach(function(opt, i){
+    var checked = arr.indexOf(opt)>-1 ? 'checked' : '';
+    var inputId = 'chk_modifiers_'+i;
+    html += '<label class="chk" for="'+inputId+'">'
+      + '<input type="checkbox" id="'+inputId+'" '+checked+' onchange="toggleMulti(\'modifiers\', \''+escJs(opt)+'\', this.checked)">'
+      + '<span>'+escapeHtml(opt)+'</span>'
+      + '</label>';
+  });
+  html += '</div></div>';
+  return html;
+}
+
+function renderTextOptional(step){
+  var val = state.sel[step.id] || '';
+  return '<input type="text" class="text-input" id="textInput_'+step.id+'" placeholder="'+escapeHtml(step.placeholder||'')+'" value="'+escapeHtml(val)+'" oninput="onTextInput(\''+step.id+'\', this.value)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();continueStep();}">';
+}
+
+function renderTextareaOptional(step){
+  var val = state.sel[step.id] || '';
+  return '<textarea class="text-input textarea-input" id="textInput_'+step.id+'" placeholder="'+escapeHtml(step.placeholder||'')+'" rows="4" oninput="onTextInput(\''+step.id+'\', this.value); this.style.height=\'auto\'; this.style.height=this.scrollHeight+\'px\';">'+escapeHtml(val)+'</textarea>';
+}
+
+function renderWizardHTML(){
+  var flow = FLOWS[state.flowKey];
+  var step = currentStep();
+  var total = flow.steps.length, n = state.stepIndex+1;
+  var pct = Math.round(n/total*100);
+  var body = '', bodyClass = 'step-body';
+
+  if (step.type==='select-single'){
+    body = renderSingleOptions(step);
+    if (step.layout==='row') bodyClass += ' step-body-row';
+  } else if (step.type==='dropdown-grouped'){
+    var ddgDisabled = !state.sel[step.id] ? 'disabled' : '';
+    body = renderGroupedDropdown(step) + '<button class="btn-primary" '+ddgDisabled+' onclick="continueStep()">Continue</button>';
+  } else if (step.type==='dropdown'){
+    body = renderPlainDropdown(step) + '<button class="btn-primary" onclick="continueStep()">Continue</button>';
+  } else if (step.type==='checkbox-multi'){
+    body = renderCheckboxes(step) + '<button class="btn-primary" onclick="continueStep()">Continue</button>';
+  } else if (step.type==='text-optional'){
+    body = renderTextOptional(step) + '<button class="btn-primary" onclick="continueStep()">Continue</button>';
+  } else if (step.type==='textarea-optional'){
+    body = renderTextareaOptional(step) + '<button class="btn-primary" onclick="continueStep()">Continue</button>';
+  } else if (step.type==='patient-info'){
+    body = renderPatientInfo(step) + '<button class="btn-primary" onclick="continueStep()">Continue</button>';
+  }
+
+  return '<div class="wizard-head">'
+    + '<button class="back-btn" onclick="goBack()">\u2190 Back</button>'
+    + '<button class="close-btn" onclick="goHome()" aria-label="Close">\u2715</button>'
+    + '</div>'
+    + '<p class="eyebrow">'+flow.eyebrow+'</p>'
+    + '<div class="progress"><span class="progress-label">ITEM '+n+' OF '+total+'</span>'
+    + '<div class="progress-track"><div class="progress-fill" style="width:'+pct+'%"></div></div></div>'
+    + '<h2 class="step-title">'+escapeHtml(step.title)+'</h2>'
+    + (step.sub ? '<p class="step-sub">'+escapeHtml(step.sub)+'</p>' : '')
+    + '<div class="'+bodyClass+'">'+body+'</div>';
+}
+
+function renderOutputHTML(){
+  var flow = FLOWS[state.lastFlowKey];
+  var saveBtn = state.savedThisPrompt
+    ? '<button class="btn-secondary" disabled>Saved \u2713</button>'
+    : '<button class="btn-secondary" id="saveBtn" onclick="saveFavorite()">Save as favorite</button>';
+  return '<div class="wizard-head"><button class="back-btn" onclick="goHome()">\u2190 Home</button></div>'
+    + '<p class="eyebrow">'+flow.eyebrow+' \u2014 READY</p>'
+    + '<div class="order-card">'
+    + '<div class="order-top"><span class="order-flow">'+flow.label+'</span><span class="order-ref">PREVIEW</span></div>'
+    + '<textarea class="order-text" id="promptOutput" readonly></textarea>'
+    + '</div>'
+    + '<div class="output-actions"><button class="btn-primary" id="copyBtn" onclick="copyPrompt()">Copy prompt</button>'+saveBtn+'</div>'
+    + '<p class="copy-tip">Paste this into ChatGPT, Claude, or your preferred LLM.</p>'
+    + '<div class="output-links"><button class="link-btn" onclick="editAnswers()">\u2190 Edit answers</button><button class="link-btn" onclick="goHome()">Build another prompt</button></div>';
+}
+
+function renderFavoriteViewHTML(){
+  var fav = state.favorites[state.viewingFavIdx];
+  var flow = FLOWS[fav.flowKey];
+  return '<div class="wizard-head"><button class="back-btn" onclick="goHome()">\u2190 Home</button></div>'
+    + '<p class="eyebrow">'+flow.eyebrow+' \u2014 SAVED</p>'
+    + '<div class="order-card">'
+    + '<div class="order-top"><span class="order-flow">'+flow.label+'</span><span class="order-ref">'+fav.id+'</span></div>'
+    + '<textarea class="order-text" id="promptOutput" readonly></textarea>'
+    + '</div>'
+    + '<div class="output-actions"><button class="btn-primary" id="copyBtn" onclick="copyPrompt()">Copy prompt</button>'
+    + '<button class="btn-danger" onclick="deleteFavoriteAndGoHome('+state.viewingFavIdx+')">Remove from saved</button></div>'
+    + '<p class="copy-tip">Paste this into ChatGPT, Claude, or your preferred LLM.</p>';
+}
+
+function afterRender(){
+  if (state.screen==='output' || state.screen==='favorite-view'){
+    var ta = document.getElementById('promptOutput');
+    if (ta){
+      ta.value = (state.screen==='output') ? state.lastPrompt : state.favorites[state.viewingFavIdx].prompt;
+      ta.style.height='auto';
+      ta.style.height = ta.scrollHeight + 'px';
+    }
+  }
+  if (state.screen==='wizard'){
+    var step = currentStep();
+    if (step.type==='text-optional'){
+      var inp = document.getElementById('textInput_'+step.id);
+      if (inp) inp.focus();
+    } else if (step.type==='textarea-optional'){
+      var ta2 = document.getElementById('textInput_'+step.id);
+      if (ta2){
+        ta2.style.height='auto';
+        ta2.style.height = ta2.scrollHeight + 'px';
+        ta2.focus();
+      }
+    }
+  }
+}
+
+function render(){
+  var app = document.getElementById('app');
+  if (state.screen==='home') app.innerHTML = renderHomeHTML();
+  else if (state.screen==='wizard') app.innerHTML = renderWizardHTML();
+  else if (state.screen==='output') app.innerHTML = renderOutputHTML();
+  else if (state.screen==='favorite-view') app.innerHTML = renderFavoriteViewHTML();
+  afterRender();
+}
+
+render();
+</script>
+</body>
+</html>
